@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+    tier: frontend
+spec:
+  replicas: {{ .Values.replicaCount.frontend }}
+  selector:
+    matchLabels:
+      app: comments-system
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: comments-system
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ printf "%s:%s" .Values.image.frontend.repository .Values.image.frontend.tag }}"
+          imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+          env:
+            - name: BACKEND_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: frontend-config
+                  key: BACKEND_API_URL

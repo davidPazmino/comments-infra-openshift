@@ -1,0 +1,46 @@
+namespace: comments-system
+
+replicaCount:
+  frontend: 1
+  backendApi: 1
+  backendData: 1
+  db: 1
+
+image:
+  frontend:
+    repository: dpazmino6215/comments-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  backendApi:
+    repository: dpazmino6215/comments-backend-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  backendData:
+    repository: dpazmino6215/comments-backend-data
+    tag: latest
+    pullPolicy: IfNotPresent
+  db:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+
+frontend:
+  port: 80
+  route:
+    enabled: true
+    host: ""
+
+backendApi:
+  port: 8080
+
+backendData:
+  port: 8080
+
+db:
+  port: 5432
+  database: comments
+  username: comments
+  password: changeme
+  storage:
+    size: 1Gi
+    storageClassName: ""

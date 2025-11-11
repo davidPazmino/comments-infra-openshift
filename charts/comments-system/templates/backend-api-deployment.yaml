@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+    tier: backend-api
+spec:
+  replicas: {{ .Values.replicaCount.backendApi }}
+  selector:
+    matchLabels:
+      app: comments-system
+      tier: backend-api
+  template:
+    metadata:
+      labels:
+        app: comments-system
+        tier: backend-api
+    spec:
+      containers:
+        - name: backend-api
+          image: "{{ printf "%s:%s" .Values.image.backendApi.repository .Values.image.backendApi.tag }}"
+          imagePullPolicy: {{ .Values.image.backendApi.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backendApi.port }}
+          env:
+            - name: BACKEND_DATA_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-api-config
+                  key: BACKEND_DATA_URL

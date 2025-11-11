@@ -1,0 +1,57 @@
+name: OpenShift Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install oc
+        uses: redhat-actions/oc-installer@v1
+        with:
+          version: '4.14.0'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.2
+
+      - name: Docker Hub login
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: OpenShift login
+        env:
+          OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
+          OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+        run: |
+          oc login "$OPENSHIFT_SERVER" --token="$OPENSHIFT_TOKEN" --insecure-skip-tls-verify=true
+
+      - name: Ensure namespace exists
+        env:
+          COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
+        run: |
+          if ! oc get namespace "$COMMENTS_NAMESPACE" >/dev/null 2>&1; then
+            oc create namespace "$COMMENTS_NAMESPACE"
+          fi
+
+      - name: Helm upgrade
+        env:
+          COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        run: |
+          helm upgrade --install comments-system charts/comments-system \
+            --namespace "$COMMENTS_NAMESPACE" \
+            --set namespace="$COMMENTS_NAMESPACE" \
+            --set image.frontend.repository="$DOCKERHUB_USERNAME/comments-frontend" \
+            --set image.backendApi.repository="$DOCKERHUB_USERNAME/comments-backend-api" \
+            --set image.backendData.repository="$DOCKERHUB_USERNAME/comments-backend-data"

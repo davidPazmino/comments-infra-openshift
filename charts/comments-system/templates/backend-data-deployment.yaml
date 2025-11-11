@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-data
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+    tier: backend-data
+spec:
+  replicas: {{ .Values.replicaCount.backendData }}
+  selector:
+    matchLabels:
+      app: comments-system
+      tier: backend-data
+  template:
+    metadata:
+      labels:
+        app: comments-system
+        tier: backend-data
+    spec:
+      containers:
+        - name: backend-data
+          image: "{{ printf "%s:%s" .Values.image.backendData.repository .Values.image.backendData.tag }}"
+          imagePullPolicy: {{ .Values.image.backendData.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backendData.port }}
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-data-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-data-config
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-data-config
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_PASSWORD
