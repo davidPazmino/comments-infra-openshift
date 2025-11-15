@@ -42,7 +42,12 @@ jobs:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
         run: |
           TARGET_NAMESPACE=${COMMENTS_NAMESPACE:-darkblade-x-dev}
-          oc get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1 || oc create namespace "$TARGET_NAMESPACE"
+          if ! oc get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1; then
+            oc create namespace "$TARGET_NAMESPACE"
+          fi
+          oc label namespace "$TARGET_NAMESPACE" app.kubernetes.io/managed-by=Helm --overwrite
+          oc annotate namespace "$TARGET_NAMESPACE" meta.helm.sh/release-name=comments-system --overwrite
+          oc annotate namespace "$TARGET_NAMESPACE" meta.helm.sh/release-namespace="$TARGET_NAMESPACE" --overwrite
 
       - name: Deploy with Helm
         env:
