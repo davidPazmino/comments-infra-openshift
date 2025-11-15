@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,17 +38,14 @@ jobs:
         run: |
           oc login "$OPENSHIFT_SERVER" --token="$OPENSHIFT_TOKEN" --insecure-skip-tls-verify=true
 
-      - name: Ensure namespace exists
+      - name: Select namespace
         env:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
         run: |
           TARGET_NAMESPACE=${COMMENTS_NAMESPACE:-darkblade-x-dev}
-          if ! oc get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1; then
-            oc create namespace "$TARGET_NAMESPACE"
-          fi
-          oc label namespace "$TARGET_NAMESPACE" app.kubernetes.io/managed-by=Helm --overwrite
-          oc annotate namespace "$TARGET_NAMESPACE" meta.helm.sh/release-name=comments-system --overwrite
-          oc annotate namespace "$TARGET_NAMESPACE" meta.helm.sh/release-namespace="$TARGET_NAMESPACE" --overwrite
+          echo "Using namespace: $TARGET_NAMESPACE"
+          echo "NOTE: Namespace must already exist. Workflow will NOT create, patch or annotate namespaces."
+          oc project "$TARGET_NAMESPACE"
 
       - name: Deploy with Helm
         env:
@@ -55,8 +53,10 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           TARGET_NAMESPACE=${COMMENTS_NAMESPACE:-darkblade-x-dev}
+
           helm upgrade --install comments-system charts/comments-system \
             --namespace "$TARGET_NAMESPACE" \
+            --create-namespace=false \
             --set image.frontend.repository="$DOCKERHUB_USERNAME/comments-frontend" \
             --set image.backendApi.repository="$DOCKERHUB_USERNAME/comments-backend-api" \
             --set image.backendData.repository="$DOCKERHUB_USERNAME/comments-backend-data"
