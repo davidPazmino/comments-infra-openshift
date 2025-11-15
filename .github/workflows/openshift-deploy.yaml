@@ -1,4 +1,4 @@
-name: OpenShift Deploy
+name: Deploy to OpenShift
 
 on:
   push:
@@ -9,27 +9,28 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install oc
-        uses: redhat-actions/oc-installer@v1
-        with:
-          version: '4.14.0'
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        with:
-          version: v3.13.2
-
-      - name: Docker Hub login
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Install OpenShift CLI
         run: |
-          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          curl -sSL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz -o oc.tar.gz
+          tar -xzf oc.tar.gz oc kubectl
+          sudo mv oc /usr/local/bin/oc
+          sudo chmod +x /usr/local/bin/oc
+          rm -f oc.tar.gz kubectl
 
-      - name: OpenShift login
+      - name: Install Helm 3
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Log in to OpenShift
         env:
           OPENSHIFT_SERVER: ${{ secrets.OPENSHIFT_SERVER }}
           OPENSHIFT_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
@@ -40,18 +41,15 @@ jobs:
         env:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
         run: |
-          if ! oc get namespace "$COMMENTS_NAMESPACE" >/dev/null 2>&1; then
-            oc create namespace "$COMMENTS_NAMESPACE"
-          fi
+          oc get namespace "$COMMENTS_NAMESPACE" >/dev/null 2>&1 || oc create namespace "$COMMENTS_NAMESPACE"
 
-      - name: Helm upgrade
+      - name: Deploy with Helm
         env:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           helm upgrade --install comments-system charts/comments-system \
             --namespace "$COMMENTS_NAMESPACE" \
-            --set namespace="$COMMENTS_NAMESPACE" \
             --set image.frontend.repository="$DOCKERHUB_USERNAME/comments-frontend" \
             --set image.backendApi.repository="$DOCKERHUB_USERNAME/comments-backend-api" \
             --set image.backendData.repository="$DOCKERHUB_USERNAME/comments-backend-data"
