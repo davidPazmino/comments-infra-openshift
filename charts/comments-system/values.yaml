@@ -1,4 +1,4 @@
-namespace: comments-system
+namespace: darkblade-x-dev
 
 replicaCount:
   frontend: 1
@@ -21,6 +21,7 @@ image:
     pullPolicy: IfNotPresent
   db:
     repository: postgres
+    storageClassName: "gp3"
     tag: "15-alpine"
     pullPolicy: IfNotPresent
 
