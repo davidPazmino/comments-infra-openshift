@@ -41,15 +41,17 @@ jobs:
         env:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
         run: |
-          oc get namespace "$COMMENTS_NAMESPACE" >/dev/null 2>&1 || oc create namespace "$COMMENTS_NAMESPACE"
+          TARGET_NAMESPACE=${COMMENTS_NAMESPACE:-darkblade-x-dev}
+          oc get namespace "$TARGET_NAMESPACE" >/dev/null 2>&1 || oc create namespace "$TARGET_NAMESPACE"
 
       - name: Deploy with Helm
         env:
           COMMENTS_NAMESPACE: ${{ secrets.COMMENTS_NAMESPACE }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
+          TARGET_NAMESPACE=${COMMENTS_NAMESPACE:-darkblade-x-dev}
           helm upgrade --install comments-system charts/comments-system \
-            --namespace "$COMMENTS_NAMESPACE" \
+            --namespace "$TARGET_NAMESPACE" \
             --set image.frontend.repository="$DOCKERHUB_USERNAME/comments-frontend" \
             --set image.backendApi.repository="$DOCKERHUB_USERNAME/comments-backend-api" \
             --set image.backendData.repository="$DOCKERHUB_USERNAME/comments-backend-data"

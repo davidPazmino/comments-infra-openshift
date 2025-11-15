@@ -1,3 +1,4 @@
+# Namespace for Helm deployments in OpenShift
 namespace: darkblade-x-dev
 
 replicaCount:
