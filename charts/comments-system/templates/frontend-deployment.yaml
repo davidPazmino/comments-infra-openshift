@@ -30,3 +30,5 @@ spec:
                 configMapKeyRef:
                   name: frontend-config
                   key: BACKEND_API_URL
+            - name: PORT
+              value: "{{ .Values.frontend.port }}"
