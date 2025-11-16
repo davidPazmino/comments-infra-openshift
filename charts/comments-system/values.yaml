@@ -43,6 +43,12 @@ db:
   database: comments
   username: comments
   password: changeme
+  env:
+    - name: PGDATA
+      value: /var/lib/postgresql/data/pgdata
+  volumeMounts:
+    - name: db-storage
+      mountPath: /var/lib/postgresql/data
   storage:
     size: 1Gi
     storageClassName: ""

@@ -39,9 +39,16 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: DB_PASSWORD
+{{- with .Values.db.env }}
+{{- toYaml . | nindent 12 }}
+{{- end }}
           volumeMounts:
+{{- if .Values.db.volumeMounts }}
+{{- toYaml .Values.db.volumeMounts | nindent 12 }}
+{{- else }}
             - name: db-storage
               mountPath: /var/lib/postgresql/data
+{{- end }}
       volumes:
         - name: db-storage
           persistentVolumeClaim:
