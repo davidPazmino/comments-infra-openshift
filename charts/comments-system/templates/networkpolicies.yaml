@@ -93,3 +93,75 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.db.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-egress
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+spec:
+  podSelector:
+    matchLabels:
+      app: comments-system
+      tier: frontend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: comments-system
+              tier: backend-api
+      ports:
+        - protocol: TCP
+          port: {{ .Values.backendApi.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-api-egress
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+spec:
+  podSelector:
+    matchLabels:
+      app: comments-system
+      tier: backend-api
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: comments-system
+              tier: backend-data
+      ports:
+        - protocol: TCP
+          port: {{ .Values.backendData.port }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-data-egress
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: comments-system
+spec:
+  podSelector:
+    matchLabels:
+      app: comments-system
+      tier: backend-data
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: comments-system
+              tier: database
+      ports:
+        - protocol: TCP
+          port: {{ .Values.db.port }}
